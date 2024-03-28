@@ -1,0 +1,95 @@
+[
+  {
+    "api_type": "azure",
+    "api_version": "2023-07-01-preview",
+    "creation_context": {
+      "created_at": "2024-03-13T20:57:52.425224+00:00",
+      "created_by": "wabrez@microsoft.com",
+      "created_by_type": "User",
+      "last_modified_at": "2024-03-13T20:57:52.425224+00:00",
+      "last_modified_by": "wabrez@microsoft.com",
+      "last_modified_by_type": "User"
+    },
+    "credentials": {
+      "type": "api_key"
+    },
+    "id": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.MachineLearningServices/workspaces/contoso-chat-sf-ai/connections/aoai-connection",
+    "is_shared": false,
+    "name": "aoai-connection",
+    "resourceGroup": "rg-wabrez-ai-test01",
+    "tags": {
+      "ApiType": "azure",
+      "ApiVersion": "2023-07-01-preview",
+      "DeploymentApiVersion": "2023-10-01-preview",
+      "ResourceId": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.CognitiveServices/accounts/wabrez-ai-test01-openai-contoso-cpxjnujl4dzq2"
+    },
+    "target": "https://contoso-chat-sf-ai-aiservicescpxjnujl4dzq2.openai.azure.com/",
+    "type": "azure_open_ai"
+  },
+  {
+    "api_version": "2023-10-01",
+    "credentials": {
+      "type": "api_key"
+    },
+    "id": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.MachineLearningServices/workspaces/contoso-chat-sf-ai/connections/Default_AzureAIContentSafety",
+    "is_shared": true,
+    "kind": "Content Safety",
+    "name": "Default_AzureAIContentSafety",
+    "resourceGroup": "rg-wabrez-ai-test01",
+    "tags": {
+      "ApiType": "Azure",
+      "ApiVersion": "2023-10-01",
+      "DeploymentApiVersion": "2023-10-01-preview",
+      "Kind": "Content Safety",
+      "ProvisioningState": "Succeeded",
+      "ResourceId": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.CognitiveServices/accounts/wabrez-ai-test01-openai-contoso-cpxjnujl4dzq2"
+    },
+    "target": "https://contoso-chat-sf-ai-aiservicescpxjnujl4dzq2.cognitiveservices.azure.com/",
+    "type": "cognitive_service"
+  },
+  {
+    "api_type": "Azure",
+    "api_version": "2023-07-01-preview",
+    "credentials": {
+      "type": "api_key"
+    },
+    "id": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.MachineLearningServices/workspaces/contoso-chat-sf-ai/connections/Default_AzureOpenAI",
+    "is_shared": true,
+    "name": "Default_AzureOpenAI",
+    "resourceGroup": "rg-wabrez-ai-test01",
+    "tags": {
+      "ApiType": "Azure",
+      "ApiVersion": "2023-07-01-preview",
+      "DeploymentApiVersion": "2023-10-01-preview",
+      "ProvisioningState": "Succeeded",
+      "ProxyResourceId": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.MachineLearningServices/workspaces/contoso-chat-sf-ai/oaiaccounts/id_b5255a7bb353418ab5262fb6d7aa1321",
+      "ResourceId": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.CognitiveServices/accounts/wabrez-ai-test01-openai-contoso-cpxjnujl4dzq2"
+    },
+    "target": "https://contoso-chat-sf-ai-aiservicescpxjnujl4dzq2.openai.azure.com/",
+    "type": "azure_open_ai"
+  },
+  {
+    "api_version": "2023-07-01-preview",
+    "creation_context": {
+      "created_at": "2024-03-13T20:57:52.440848+00:00",
+      "created_by": "wabrez@microsoft.com",
+      "created_by_type": "User",
+      "last_modified_at": "2024-03-13T20:57:52.440848+00:00",
+      "last_modified_by": "wabrez@microsoft.com",
+      "last_modified_by_type": "User"
+    },
+    "credentials": {
+      "type": "api_key"
+    },
+    "id": "/subscriptions/faa080af-c1d8-40ad-9cce-e1a450ca5b57/resourceGroups/rg-wabrez-ai-test01/providers/Microsoft.MachineLearningServices/workspaces/contoso-chat-sf-ai/connections/contoso-search",
+    "is_shared": false,
+    "name": "contoso-search",
+    "resourceGroup": "rg-wabrez-ai-test01",
+    "tags": {
+      "ApiVersion": "2023-07-01-preview",
+      "DeploymentApiVersion": "2023-11-01"
+    },
+    "target": "https://wabrez-ai-test01-search-contosocpxjnujl4dzq2.search.windows.net/",
+    "type": "cognitive_search"
+  }
+]
