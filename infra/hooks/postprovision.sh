@@ -47,12 +47,12 @@ searchService=$AZURE_SEARCH_NAME
 openAiService=$AZURE_OPENAI_NAME
 cosmosService=$AZURE_COSMOS_NAME
 subscriptionId=$AZURE_SUBSCRIPTION_ID
-mlProjectName=$AZURE_MLPROJECT_NAME
+mlProjectName=$AZUREML_WORKSPACE_NAME
 
 # Ensure all required environment variables are set
 if [ -z "$resourceGroupName" ] || [ -z "$searchService" ] || [ -z "$openAiService" ] || [ -z "$cosmosService" ] || [ -z "$subscriptionId" ] || [ -z "$mlProjectName" ]; then
     echo "One or more required environment variables are not set."
-    echo "Ensure that AZURE_RESOURCE_GROUP, AZURE_SEARCH_NAME, AZURE_OPENAI_NAME, AZURE_COSMOS_NAME, AZURE_SUBSCRIPTION_ID, and AZURE_MLPROJECT_NAME are set."
+    echo "Ensure that AZURE_RESOURCE_GROUP, AZURE_SEARCH_NAME, AZURE_OPENAI_NAME, AZURE_COSMOS_NAME, AZURE_SUBSCRIPTION_ID, and AZUREML_PROJECT_NAME are set."
     exit 1
 fi
 
@@ -62,12 +62,9 @@ apiKey=$(az cognitiveservices account keys list --name $openAiService --resource
 cosmosKey=$(az cosmosdb keys list --name $cosmosService --resource-group $resourceGroupName --query primaryMasterKey --output tsv)
 
 # Set the environment variables using azd env set
-azd env set CONTOSO_SEARCH_KEY $searchKey
-azd env set CONTOSO_AI_SERVICES_KEY $apiKey
+azd env set SEARCH_KEY $searchKey
+azd env set AI_SERVICES_KEY $apiKey
 azd env set COSMOS_KEY $cosmosKey
-
-# Create config.json with the environment variable values
-echo "{\"subscription_id\": \"$subscriptionId\", \"resource_group\": \"$resourceGroupName\", \"workspace_name\": \"$mlProjectName\"}" > config.json
 
 # Output environment variables to .env file using azd env get-values
 azd env get-values > .env
@@ -77,12 +74,6 @@ echo "Script execution completed successfully."
 echo 'Installing dependencies from "requirements.txt"'
 python -m pip install -r requirements.txt
 
-jupyter nbconvert --execute --to python --ExecutePreprocessor.timeout=-1 connections/create-connections.ipynb
+# jupyter nbconvert --execute --to python --ExecutePreprocessor.timeout=-1 connections/create-connections.ipynb
 jupyter nbconvert --execute --to python --ExecutePreprocessor.timeout=-1 data/customer_info/create-cosmos-db.ipynb
 jupyter nbconvert --execute --to python --ExecutePreprocessor.timeout=-1 data/product_info/create-azure-search.ipynb
-jupyter nbconvert --execute --to python --ExecutePreprocessor.timeout=-1 deployment/push_and_deploy_pf.ipynb
-
-# call deployment.sh
-echo "Deploying PromptFlow to Azure AI Studio..."
-sh infra/hooks/deployment.sh
-

@@ -1,28 +1,31 @@
 param applicationInsightsId string
 param containerRegistryId string
-param contosoChatSfAiName string = 'contoso-chat-sf-ai'
-param contosoChatSfAiProjectName string = 'contoso-chat-sf-aiproj'
+param hubWorkspaceName string
+param workspaceName string
 param keyVaultId string
 param location string
 param openAiEndpoint string
 param openAiName string
 param searchName string
+param cosmosAccountName string
 param storageAccountId string
+param tags object = {}
 
 // In ai.azure.com: Azure AI Resource
-resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-preview' = {
-  name: contosoChatSfAiName
+resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' = {
+  name: hubWorkspaceName
   location: location
+  tags: tags
   sku: {
     name: 'Basic'
     tier: 'Basic'
   }
-  kind: 'Hub' 
+  kind: 'Hub'
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
-    friendlyName: contosoChatSfAiName
+    friendlyName: hubWorkspaceName
     storageAccount: storageAccountId
     keyVault: keyVaultId
     applicationInsights: applicationInsightsId
@@ -38,6 +41,7 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
 
   resource openAiDefaultEndpoint 'endpoints' = {
     name: 'Azure.OpenAI'
+    tags: tags
     properties: {
       name: 'Azure.OpenAI'
       endpointType: 'Azure.OpenAI'
@@ -47,6 +51,7 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
 
   resource contentSafetyDefaultEndpoint 'endpoints' = {
     name: 'Azure.ContentSafety'
+    tags: tags
     properties: {
       name: 'Azure.ContentSafety'
       endpointType: 'Azure.ContentSafety'
@@ -61,9 +66,9 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
       target: openAiEndpoint
       authType: 'ApiKey'
       metadata: {
-          ApiVersion: '2023-07-01-preview'
-          ApiType: 'azure'
-          ResourceId: openai.id
+        ApiVersion: '2023-07-01-preview'
+        ApiType: 'azure'
+        ResourceId: openai.id
       }
       credentials: {
         key: openai.listKeys().key1
@@ -72,7 +77,7 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
   }
 
   resource searchConnection 'connections' = {
-    name: 'contoso-search'
+    name: 'products-search'
     properties: {
       category: 'CognitiveSearch'
       target: 'https://${search.name}.search.windows.net/'
@@ -82,12 +87,31 @@ resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
       }
     }
   }
+
+  resource cosmosConnection 'connections' = {
+    name: 'products-cosmos'
+    properties: {
+      category: 'CosmosDb'
+      authType: 'CustomKeys'
+      credentials: {
+        keys: {
+          key: cosmos.listKeys().primaryMasterKey
+        }
+      }
+      metadata: {
+        endpoint: cosmos.properties.documentEndpoint
+        databaseId: 'products'
+        containerId: 'customers'
+      }
+    }
+  }
 }
 
 // In ai.azure.com: Azure AI Project
-resource project 'Microsoft.MachineLearningServices/workspaces@2023-10-01' = {
-  name: contosoChatSfAiProjectName 
+resource workspace 'Microsoft.MachineLearningServices/workspaces@2023-10-01' = {
+  name: workspaceName
   location: location
+  tags: tags
   sku: {
     name: 'Basic'
     tier: 'Basic'
@@ -97,13 +121,13 @@ resource project 'Microsoft.MachineLearningServices/workspaces@2023-10-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    friendlyName: contosoChatSfAiProjectName 
+    friendlyName: workspaceName
     hbiWorkspace: false
     v1LegacyMode: false
     publicNetworkAccess: 'Enabled'
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
     // most properties are not allowed for a project workspace: "Project workspace shouldn't define ..."
-    hubResourceId: workspace.id
+    hubResourceId: hub.id
   }
 }
 
@@ -115,6 +139,10 @@ resource search 'Microsoft.Search/searchServices@2021-04-01-preview' existing = 
   name: searchName
 }
 
+resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-08-15' existing = {
+  name: cosmosAccountName
+}
+
+output hubWorkspaceName string = hub.name
 output workspaceName string = workspace.name
-output projectName string = project.name
-output principalId string = project.identity.principalId
+output principalId string = workspace.identity.principalId

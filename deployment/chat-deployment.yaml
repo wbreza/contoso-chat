@@ -1,9 +1,9 @@
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
 instance_type: Standard_DS3_v2
 instance_count: 1
-# environment_variables:  
-#   # "compute" mode is the default mode, if you want to deploy to serving mode, you need to set this env variable to "serving"
-#   PROMPTFLOW_RUN_MODE: serving
+environment_variables:  
+  # "compute" mode is the default mode, if you want to deploy to serving mode, you need to set this env variable to "serving"
+  PROMPTFLOW_RUN_MODE: serving
 
 #   # for pulling connections from workspace
 #   PRT_CONFIG_OVERRIDE: deployment.subscription_id=<sub-id>,deployment.resource_group=<resource-group>,deployment.workspace_name=<workspace-name>,deployment.endpoint_name=<endpoint-name>,deployment.deployment_name=<deployment-name>

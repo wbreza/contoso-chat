@@ -43,7 +43,7 @@ nodes:
     type: code
     path: customer_lookup.py
   inputs:
-    conn: contoso-cosmos
+    conn: products-cosmos
     customerId: ${inputs.customerId}
   use_variants: false
 - name: retrieve_support_documentation
@@ -52,7 +52,7 @@ nodes:
     type: code
     path: retrieve_support_documentation.py
   inputs:
-    search: contoso-search
+    search: products-search
     question: ${inputs.question}
     index_name: contoso-manuals-index
     embedding: ${question_embedding.output}

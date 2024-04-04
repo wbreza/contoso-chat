@@ -3,26 +3,26 @@
 name: contoso-chat
 metadata:
   template: contoso-chat@0.0.1-beta
+hooks:
+  postprovision:
+    shell: sh
+    run: ./infra/hooks/postprovision.sh
 services:
-  chat-flow:
-    host: ai.flow
-    project: ./contoso-chat
+  chat:
+    host: ml.endpoint
     config:
-      name: wb-custom-flow
-      workspace: wabrez-workspace
-      environments:
-        - name: wabrez-custom-env
-          path: ../deployment/docker/environment.yml
-      models:
-        - name: wabrez-custom-model
-          path: ../deployment/chat-model.yaml
-      endpoints:
-        - name: wabrez-custom-endpoint
-          path: ../deployment/chat-endpoint.yaml
-          environment: wabrez-custom-env
-          model: wabrez-custom-model
-          deployment:
-            name: wabrez-custom-deployment
-            path: ../deployment/chat-deployment.yaml
-            overrides:
-              environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${FLOW_WORKSPACE_NAME},deployment.endpoint_name=${FLOW_ENDPOINT_NAME},deployment.deployment_name=${FLOW_DEPLOYMENT_NAME}
+      environment:
+        name: wabrez-custom-env
+        path: deployment/docker/environment.yml
+      flow:
+        name: wb-custom-flow
+        path: ./contoso-chat
+      model:
+        name: wabrez-custom-model
+        path: deployment/chat-model.yaml
+        overrides:
+          properties.azureml.promptflow.source_flow_id: ${AZUREML_FLOW_NAME}
+      deployment:
+        path: deployment/chat-deployment.yaml
+        overrides:
+          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_HUB_WORKSPACE_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}

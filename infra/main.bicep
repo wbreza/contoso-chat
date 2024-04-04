@@ -9,11 +9,6 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
-// Optional parameters to override the default azd resource naming conventions. Update the main.parameters.json file to provide values. e.g.,:
-// "resourceGroupName": {
-//      "value": "myGroupName"
-// }
-
 param applicationInsightsName string = ''
 param azureOpenAiResourceName string = ''
 param containerRegistryName string = ''
@@ -23,21 +18,24 @@ param resourceGroupName string = ''
 param searchLocation string = ''
 param searchServiceName string = ''
 param storageServiceName string = ''
-
-param accountsContosoChatSfAiServicesName string = 'contoso-chat-sf-ai-aiservices'
-param workspacesApwsContosoChatSfAiName string = 'apws-contoso-chat-sf-ai'
+param endpointName string = ''
+param workspaceName string = ''
+param hubWorkspaceName string = ''
+param logAnalyticsName string = ''
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
-var openAiSubdomain  = '${accountsContosoChatSfAiServicesName}${resourceToken}'
+var openAiSubdomain = 'aiservices-${resourceToken}'
 var openAiEndpoint = 'https://${openAiSubdomain }.openai.azure.com/'
+
+var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
-  name: !empty(resourceGroupName) ? resourceGroupName : 'rg-${environmentName}'
+  name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
   location: location
   tags: tags
 }
@@ -46,7 +44,7 @@ module containerRegistry 'core/host/container-registry.bicep' = {
   name: 'containerregistry'
   scope: rg
   params: {
-    name: !empty(containerRegistryName) ? containerRegistryName : 'acrcontoso${resourceToken}'
+    name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
     tags: tags
     sku: {
@@ -115,13 +113,16 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
   name: 'cosmos'
   scope: rg
   params: {
-    accountName: !empty(cosmosAccountName) ? cosmosAccountName : 'cosmos-contoso-${resourceToken}'
-    databaseName: 'contoso-outdoor'
+    accountName: !empty(cosmosAccountName) ? cosmosAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
+    databaseName: 'products'
     location: location
-    tags: union(tags, {
-      defaultExperience: 'Core (SQL)'
-      'hidden-cosmos-mmspecial': ''
-    })
+    tags: union(
+      tags,
+      {
+        defaultExperience: 'Core (SQL)'
+        'hidden-cosmos-mmspecial': ''
+      }
+    )
     keyVaultName: keyvault.outputs.name
     containers: [
       {
@@ -134,21 +135,21 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
 }
 
 module keyvault 'core/security/keyvault.bicep' = {
-  name: !empty(keyVaultName) ? keyVaultName : 'kvcontoso${resourceToken}'
+  name: 'keyvault'
   scope: rg
   params: {
-    name: !empty(keyVaultName) ? keyVaultName : 'kvcontoso${resourceToken}'
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
     tags: tags
     principalId: principalId
   }
 }
 
-module keyVaultAccess 'core/security/keyvalut-access.bicep' = {
+module keyVaultAccess 'core/security/keyvault-access.bicep' = {
   name: 'keyvault-access'
   scope: rg
   params: {
-    keyVaultName: keyvault.name
+    keyVaultName: keyvault.outputs.name
     principalId: machineLearning.outputs.principalId
   }
 }
@@ -157,6 +158,8 @@ module machineLearning 'app/ml.bicep' = {
   name: 'machinelearning'
   scope: rg
   params: {
+    hubWorkspaceName: !empty(hubWorkspaceName) ? hubWorkspaceName : '${environmentName}-hub'
+    workspaceName: !empty(workspaceName) ? workspaceName : '${environmentName}-workspace'
     location: location
     storageAccountId: storage.outputs.id
     keyVaultId: keyvault.outputs.id
@@ -165,6 +168,21 @@ module machineLearning 'app/ml.bicep' = {
     openAiEndpoint: openAiEndpoint
     openAiName: openai.outputs.name
     searchName: search.outputs.name
+    cosmosAccountName: cosmos.outputs.accountName
+  }
+}
+
+module machineLearningEndpoint 'core/host/online-endpoint.bicep' = {
+  name: 'endpoint'
+  scope: rg
+  params: {
+    name: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
+    location: location
+    tags: tags
+    serviceName: 'chat'
+    hubWorkspaceName: machineLearning.outputs.hubWorkspaceName
+    workspaceName: machineLearning.outputs.workspaceName
+    keyVaultName: keyvault.outputs.name
   }
 }
 
@@ -172,19 +190,22 @@ module monitoring 'core/monitor/monitoring.bicep' = {
   name: 'monitoring'
   scope: rg
   params: {
-    logAnalyticsName: workspacesApwsContosoChatSfAiName
-    applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${environmentName}-appi-contoso${resourceToken}'
+    logAnalyticsName: !empty(logAnalyticsName)
+      ? logAnalyticsName
+      : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    applicationInsightsName: !empty(applicationInsightsName)
+      ? applicationInsightsName
+      : '${abbrs.insightsComponents}${resourceToken}'
     location: location
     tags: tags
   }
 }
 
-
 module openai 'core/ai/cognitiveservices.bicep' = {
   name: 'openai'
   scope: rg
   params: {
-    name: !empty(azureOpenAiResourceName) ? azureOpenAiResourceName : '${environmentName}-openai-contoso-${resourceToken}'
+    name: !empty(azureOpenAiResourceName) ? azureOpenAiResourceName : 'openai-${resourceToken}'
     location: location
     tags: tags
     kind: 'AIServices'
@@ -234,7 +255,7 @@ module search 'core/search/search-services.bicep' = {
   name: 'search'
   scope: rg
   params: {
-    name: !empty(searchServiceName) ? searchServiceName : '${environmentName}-search-contoso${resourceToken}'
+    name: !empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}'
     location: searchLocation
     semanticSearch: 'free'
   }
@@ -244,7 +265,7 @@ module storage 'core/storage/storage-account.bicep' = {
   name: 'storage'
   scope: rg
   params: {
-    name: !empty(storageServiceName) ? storageServiceName : 'stcontoso${resourceToken}'
+    name: !empty(storageServiceName) ? storageServiceName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     containers: [
       {
@@ -370,12 +391,12 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
 output AZURE_OPENAI_NAME string = openai.outputs.name
 output AZURE_COSMOS_NAME string = cosmos.outputs.accountName
 output AZURE_SEARCH_NAME string = search.outputs.name
-output AZURE_WORKSPACE_NAME string = machineLearning.outputs.workspaceName
-output AZURE_MLPROJECT_NAME string = machineLearning.outputs.projectName
+output AZUREML_HUB_WORKSPACE_NAME string = machineLearning.outputs.hubWorkspaceName
+output AZUREML_WORKSPACE_NAME string = machineLearning.outputs.workspaceName
 
 output AZURE_RESOURCE_GROUP string = rg.name
-output CONTOSO_AI_SERVICES_ENDPOINT string = openAiEndpoint
+output AI_SERVICES_ENDPOINT string = openAiEndpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
-output CONTOSO_SEARCH_ENDPOINT string = search.outputs.endpoint
+output SEARCH_ENDPOINT string = search.outputs.endpoint
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output AZURE_KEY_VAULT_NAME string = keyvault.outputs.name
