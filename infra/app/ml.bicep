@@ -4,7 +4,6 @@ param hubWorkspaceName string
 param workspaceName string
 param keyVaultId string
 param location string
-param openAiEndpoint string
 param openAiName string
 param searchName string
 param cosmosAccountName string
@@ -63,8 +62,9 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
     name: 'aoai-connection'
     properties: {
       category: 'AzureOpenAI'
-      target: openAiEndpoint
       authType: 'ApiKey'
+      isSharedToAll: true
+      target: openai.properties.endpoint
       metadata: {
         ApiVersion: '2023-07-01-preview'
         ApiType: 'azure'
@@ -80,8 +80,9 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
     name: 'products-search'
     properties: {
       category: 'CognitiveSearch'
-      target: 'https://${search.name}.search.windows.net/'
       authType: 'ApiKey'
+      isSharedToAll: true
+      target: 'https://${search.name}.search.windows.net/'
       credentials: {
         key: search.listAdminKeys().primaryKey
       }
@@ -91,8 +92,10 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
   resource cosmosConnection 'connections' = {
     name: 'products-cosmos'
     properties: {
-      category: 'CosmosDb'
+      category: 'CustomKeys'
       authType: 'CustomKeys'
+      isSharedToAll: true
+      target: cosmos.properties.documentEndpoint
       credentials: {
         keys: {
           key: cosmos.listKeys().primaryMasterKey

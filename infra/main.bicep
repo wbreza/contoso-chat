@@ -27,7 +27,6 @@ param logAnalyticsName string = ''
 param principalId string = ''
 
 var openAiSubdomain = 'aiservices-${resourceToken}'
-var openAiEndpoint = 'https://${openAiSubdomain }.openai.azure.com/'
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -165,7 +164,6 @@ module machineLearning 'app/ml.bicep' = {
     keyVaultId: keyvault.outputs.id
     applicationInsightsId: monitoring.outputs.applicationInsightsId
     containerRegistryId: containerRegistry.outputs.id
-    openAiEndpoint: openAiEndpoint
     openAiName: openai.outputs.name
     searchName: search.outputs.name
     cosmosAccountName: cosmos.outputs.accountName
@@ -395,7 +393,7 @@ output AZUREML_HUB_WORKSPACE_NAME string = machineLearning.outputs.hubWorkspaceN
 output AZUREML_WORKSPACE_NAME string = machineLearning.outputs.workspaceName
 
 output AZURE_RESOURCE_GROUP string = rg.name
-output AI_SERVICES_ENDPOINT string = openAiEndpoint
+output AI_SERVICES_ENDPOINT string = openai.outputs.endpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
 output SEARCH_ENDPOINT string = search.outputs.endpoint
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name

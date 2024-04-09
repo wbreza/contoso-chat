@@ -21,8 +21,8 @@ services:
         name: wabrez-custom-model
         path: deployment/chat-model.yaml
         overrides:
-          properties.azureml.promptflow.source_flow_id: ${AZUREML_FLOW_NAME}
+          "properties.azureml.promptflow.source_flow_id": ${AZUREML_FLOW_NAME}
       deployment:
         path: deployment/chat-deployment.yaml
         overrides:
-          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_HUB_WORKSPACE_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}
+          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_WORKSPACE_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}
