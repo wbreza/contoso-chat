@@ -40,7 +40,6 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
 
   resource openAiDefaultEndpoint 'endpoints' = {
     name: 'Azure.OpenAI'
-    tags: tags
     properties: {
       name: 'Azure.OpenAI'
       endpointType: 'Azure.OpenAI'
@@ -50,7 +49,6 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
 
   resource contentSafetyDefaultEndpoint 'endpoints' = {
     name: 'Azure.ContentSafety'
-    tags: tags
     properties: {
       name: 'Azure.ContentSafety'
       endpointType: 'Azure.ContentSafety'
@@ -88,24 +86,26 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
       }
     }
   }
+}
 
-  resource cosmosConnection 'connections' = {
-    name: 'products-cosmos'
-    properties: {
-      category: 'CustomKeys'
-      authType: 'CustomKeys'
-      isSharedToAll: true
-      target: cosmos.properties.documentEndpoint
-      credentials: {
-        keys: {
-          key: cosmos.listKeys().primaryMasterKey
-        }
+resource cosmosConnection 'Microsoft.MachineLearningServices/workspaces/connections@2024-01-01-preview' = {
+  parent: hub
+  name: 'products-cosmos'
+  properties: {
+    authType: 'CustomKeys'
+    category: 'CustomKeys'
+    isSharedToAll: true
+    credentials: {
+      keys: {
+        key: cosmos.listKeys().primaryMasterKey
       }
-      metadata: {
-        endpoint: cosmos.properties.documentEndpoint
-        databaseId: 'products'
-        containerId: 'customers'
-      }
+    }
+    metadata: {
+      endpoint: cosmos.properties.documentEndpoint
+      databaseId: 'products'
+      containerId: 'customers'
+      'azureml.flow.connection_type': 'Custom'
+      'azureml.flow.module': 'promptflow.connections'
     }
   }
 }
