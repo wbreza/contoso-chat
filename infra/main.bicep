@@ -9,24 +9,21 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
-param applicationInsightsName string = ''
-param azureOpenAiResourceName string = ''
+param appInsightsName string = ''
+param openAiName string = ''
 param containerRegistryName string = ''
 param cosmosAccountName string = ''
 param keyVaultName string = ''
 param resourceGroupName string = ''
-param searchLocation string = ''
 param searchServiceName string = ''
-param storageServiceName string = ''
+param storageAccountName string = ''
 param endpointName string = ''
-param workspaceName string = ''
-param hubWorkspaceName string = ''
+param aiProjectName string = ''
+param aiHubName string = ''
 param logAnalyticsName string = ''
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
-
-var openAiSubdomain = 'aiservices-${resourceToken}'
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -37,75 +34,6 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
   location: location
   tags: tags
-}
-
-module containerRegistry 'core/host/container-registry.bicep' = {
-  name: 'containerregistry'
-  scope: rg
-  params: {
-    name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
-    location: location
-    tags: tags
-    sku: {
-      name: 'Standard'
-    }
-    scopeMaps: [
-      {
-        name: '_repositories_pull'
-        properties: {
-          description: 'Can pull any repository of the registry'
-          actions: [
-            'repositories/*/content/read'
-          ]
-        }
-      }
-      {
-        name: '_repositories_pull_metadata_read'
-        properties: {
-          description: 'Can perform all read operations on the registry'
-          actions: [
-            'repositories/*/content/read'
-            'repositories/*/metadata/read'
-          ]
-        }
-      }
-      {
-        name: '_repositories_push'
-        properties: {
-          description: 'Can push to any repository of the registry'
-          actions: [
-            'repositories/*/content/read'
-            'repositories/*/content/write'
-          ]
-        }
-      }
-      {
-        name: '_repositories_push_metadata_write'
-        properties: {
-          description: 'Can perform all read and write operations on the registry'
-          actions: [
-            'repositories/*/metadata/read'
-            'repositories/*/metadata/write'
-            'repositories/*/content/read'
-            'repositories/*/content/write'
-          ]
-        }
-      }
-      {
-        name: '_repositories_admin'
-        properties: {
-          description: 'Can perform all read, write and delete operations on the registry'
-          actions: [
-            'repositories/*/metadata/read'
-            'repositories/*/metadata/write'
-            'repositories/*/content/read'
-            'repositories/*/content/write'
-            'repositories/*/content/delete'
-          ]
-        }
-      }
-    ]
-  }
 }
 
 module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
@@ -122,7 +50,7 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
         'hidden-cosmos-mmspecial': ''
       }
     )
-    keyVaultName: keyvault.outputs.name
+    keyVaultName: ai.outputs.keyVaultName
     containers: [
       {
         name: 'customers'
@@ -133,14 +61,36 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
   }
 }
 
-module keyvault 'core/security/keyvault.bicep' = {
-  name: 'keyvault'
+module ai 'app/ai.bicep' = {
+  name: 'ai'
   scope: rg
   params: {
-    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    environmentName: environmentName
     location: location
     tags: tags
-    principalId: principalId
+    hubName: aiHubName
+    projectName: aiProjectName
+    appInsightsName: appInsightsName
+    containerRegistryName: containerRegistryName
+    keyVaultName: keyVaultName
+    storageAccountName: storageAccountName
+    logAnalyticsName: logAnalyticsName
+    openAiName: openAiName
+    searchName: searchServiceName
+  }
+}
+
+module chat 'app/chat.bicep' = {
+  name: 'chat'
+  scope: rg
+  params: {
+    location: location
+    tags: tags
+    aiHubName: ai.outputs.aiHubName
+    aiProjectName: ai.outputs.aiProjectName
+    endpointName: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
+    cosmosAccountName: cosmos.outputs.accountName
+    keyVaultName: ai.outputs.keyVaultName
   }
 }
 
@@ -148,180 +98,8 @@ module keyVaultAccess 'core/security/keyvault-access.bicep' = {
   name: 'keyvault-access'
   scope: rg
   params: {
-    keyVaultName: keyvault.outputs.name
-    principalId: machineLearning.outputs.principalId
-  }
-}
-
-module machineLearning 'app/ml.bicep' = {
-  name: 'machinelearning'
-  scope: rg
-  params: {
-    hubWorkspaceName: !empty(hubWorkspaceName) ? hubWorkspaceName : '${environmentName}-hub'
-    workspaceName: !empty(workspaceName) ? workspaceName : '${environmentName}-workspace'
-    location: location
-    storageAccountId: storage.outputs.id
-    keyVaultId: keyvault.outputs.id
-    applicationInsightsId: monitoring.outputs.applicationInsightsId
-    containerRegistryId: containerRegistry.outputs.id
-    openAiName: openai.outputs.name
-    searchName: search.outputs.name
-    cosmosAccountName: cosmos.outputs.accountName
-  }
-}
-
-module machineLearningEndpoint 'core/host/online-endpoint.bicep' = {
-  name: 'endpoint'
-  scope: rg
-  params: {
-    name: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
-    location: location
-    tags: tags
-    serviceName: 'chat'
-    hubWorkspaceName: machineLearning.outputs.hubWorkspaceName
-    workspaceName: machineLearning.outputs.workspaceName
-    keyVaultName: keyvault.outputs.name
-  }
-}
-
-module monitoring 'core/monitor/monitoring.bicep' = {
-  name: 'monitoring'
-  scope: rg
-  params: {
-    logAnalyticsName: !empty(logAnalyticsName)
-      ? logAnalyticsName
-      : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-    applicationInsightsName: !empty(applicationInsightsName)
-      ? applicationInsightsName
-      : '${abbrs.insightsComponents}${resourceToken}'
-    location: location
-    tags: tags
-  }
-}
-
-module openai 'core/ai/cognitiveservices.bicep' = {
-  name: 'openai'
-  scope: rg
-  params: {
-    name: !empty(azureOpenAiResourceName) ? azureOpenAiResourceName : 'openai-${resourceToken}'
-    location: location
-    tags: tags
-    kind: 'AIServices'
-    customSubDomainName: openAiSubdomain
-    deployments: [
-      {
-        name: 'gpt-35-turbo'
-        model: {
-          format: 'OpenAI'
-          name: 'gpt-35-turbo'
-          version: '0613'
-        }
-        sku: {
-          name: 'Standard'
-          capacity: 20
-        }
-      }
-      {
-        name: 'gpt-4'
-        model: {
-          format: 'OpenAI'
-          name: 'gpt-4'
-          version: '0613'
-        }
-        sku: {
-          name: 'Standard'
-          capacity: 10
-        }
-      }
-      {
-        name: 'text-embedding-ada-002'
-        model: {
-          format: 'OpenAI'
-          name: 'text-embedding-ada-002'
-          version: '2'
-        }
-        sku: {
-          name: 'Standard'
-          capacity: 20
-        }
-      }
-    ]
-  }
-}
-
-module search 'core/search/search-services.bicep' = {
-  name: 'search'
-  scope: rg
-  params: {
-    name: !empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}'
-    location: searchLocation
-    semanticSearch: 'free'
-  }
-}
-
-module storage 'core/storage/storage-account.bicep' = {
-  name: 'storage'
-  scope: rg
-  params: {
-    name: !empty(storageServiceName) ? storageServiceName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    location: location
-    containers: [
-      {
-        name: 'default'
-      }
-    ]
-    files: [
-      {
-        name: 'default'
-      }
-    ]
-    queues: [
-      {
-        name: 'default'
-      }
-    ]
-    tables: [
-      {
-        name: 'default'
-      }
-    ]
-    corsRules: [
-      {
-        allowedOrigins: [
-          'https://mlworkspace.azure.ai'
-          'https://ml.azure.com'
-          'https://*.ml.azure.com'
-          'https://ai.azure.com'
-          'https://*.ai.azure.com'
-          'https://mlworkspacecanary.azure.ai'
-          'https://mlworkspace.azureml-test.net'
-        ]
-        allowedMethods: [
-          'GET'
-          'HEAD'
-          'POST'
-          'PUT'
-          'DELETE'
-          'OPTIONS'
-          'PATCH'
-        ]
-        maxAgeInSeconds: 1800
-        exposedHeaders: [
-          '*'
-        ]
-        allowedHeaders: [
-          '*'
-        ]
-      }
-    ]
-    deleteRetentionPolicy: {
-      allowPermanentDelete: false
-      enabled: false
-    }
-    shareDeleteRetentionPolicy: {
-      enabled: true
-      days: 7
-    }
+    keyVaultName: ai.outputs.keyVaultName
+    principalId: ai.outputs.aiProjectPrincipalId
   }
 }
 
@@ -369,7 +147,7 @@ module mlServiceRoleDataScientist 'core/security/role.bicep' = {
   name: 'ml-service-role-data-scientist'
   scope: rg
   params: {
-    principalId: machineLearning.outputs.principalId
+    principalId: ai.outputs.aiProjectPrincipalId
     roleDefinitionId: 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
     principalType: 'ServicePrincipal'
   }
@@ -379,22 +157,22 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
   name: 'ml-service-role-secrets-reader'
   scope: rg
   params: {
-    principalId: machineLearning.outputs.principalId
+    principalId: ai.outputs.aiProjectPrincipalId
     roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
     principalType: 'ServicePrincipal'
   }
 }
 
 // output the names of the resources
-output AZURE_OPENAI_NAME string = openai.outputs.name
+output AZURE_OPENAI_NAME string = ai.outputs.openAiName
 output AZURE_COSMOS_NAME string = cosmos.outputs.accountName
-output AZURE_SEARCH_NAME string = search.outputs.name
-output AZUREML_HUB_WORKSPACE_NAME string = machineLearning.outputs.hubWorkspaceName
-output AZUREML_WORKSPACE_NAME string = machineLearning.outputs.workspaceName
+output AZURE_SEARCH_NAME string = ai.outputs.searchName
+output AZUREML_HUB_WORKSPACE_NAME string = ai.outputs.aiHubName
+output AZUREML_WORKSPACE_NAME string = ai.outputs.aiProjectName
 
 output AZURE_RESOURCE_GROUP string = rg.name
-output AI_SERVICES_ENDPOINT string = openai.outputs.endpoint
+output AI_SERVICES_ENDPOINT string = ai.outputs.openAiEndpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
-output SEARCH_ENDPOINT string = search.outputs.endpoint
-output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
-output AZURE_KEY_VAULT_NAME string = keyvault.outputs.name
+output SEARCH_ENDPOINT string = ai.outputs.searchEndpoint
+output AZURE_CONTAINER_REGISTRY_NAME string = ai.outputs.registryName
+output AZURE_KEY_VAULT_NAME string = ai.outputs.keyVaultName
