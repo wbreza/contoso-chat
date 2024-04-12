@@ -1,3 +1,5 @@
+import { resourceReference } from  '../../../types.bicep'
+
 metadata description = 'Creates an Azure Cosmos DB for NoSQL account with a database.'
 param accountName string
 param databaseName string
@@ -5,7 +7,7 @@ param location string = resourceGroup().location
 param tags object = {}
 
 param containers array = []
-param keyVaultName string
+param keyVaultReference resourceReference
 param principalIds array = []
 
 module cosmos 'cosmos-sql-account.bicep' = {
@@ -14,7 +16,7 @@ module cosmos 'cosmos-sql-account.bicep' = {
     name: accountName
     location: location
     tags: tags
-    keyVaultName: keyVaultName
+    keyVaultReference: keyVaultReference
   }
 }
 

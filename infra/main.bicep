@@ -18,6 +18,7 @@ param resourceGroupName string = ''
 param searchServiceName string = ''
 param storageAccountName string = ''
 param endpointName string = ''
+param aiResourceGroupName string = ''
 param aiProjectName string = ''
 param aiHubName string = ''
 param logAnalyticsName string = ''
@@ -36,11 +37,15 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+var actualCosmosAccountName = !empty(cosmosAccountName)
+  ? cosmosAccountName
+  : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
+
 module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
   name: 'cosmos'
   scope: rg
   params: {
-    accountName: !empty(cosmosAccountName) ? cosmosAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
+    accountName: actualCosmosAccountName
     databaseName: 'products'
     location: location
     tags: union(
@@ -50,7 +55,10 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
         'hidden-cosmos-mmspecial': ''
       }
     )
-    keyVaultName: ai.outputs.keyVaultName
+    keyVaultReference: {
+      name: ai.outputs.keyVaultName
+      resourceGroup: !empty(aiResourceGroupName) ? aiResourceGroupName : rg.name
+    }
     containers: [
       {
         name: 'customers'
@@ -63,9 +71,9 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
 
 module ai 'app/ai.bicep' = {
   name: 'ai'
-  scope: rg
+  scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
   params: {
-    environmentName: environmentName
+    resourceToken: resourceToken
     location: location
     tags: tags
     hubName: aiHubName
@@ -74,32 +82,41 @@ module ai 'app/ai.bicep' = {
     containerRegistryName: containerRegistryName
     keyVaultName: keyVaultName
     storageAccountName: storageAccountName
-    logAnalyticsName: logAnalyticsName
     openAiName: openAiName
     searchName: searchServiceName
   }
 }
 
-module chat 'app/chat.bicep' = {
-  name: 'chat'
-  scope: rg
+module machineLearningEndpoint './core/host/online-endpoint.bicep' = {
+  name: 'endpoint'
+  scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
   params: {
+    name: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
     location: location
     tags: tags
-    aiHubName: ai.outputs.aiHubName
-    aiProjectName: ai.outputs.aiProjectName
-    endpointName: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
-    cosmosAccountName: cosmos.outputs.accountName
+    serviceName: 'chat'
+    aiHubName: ai.outputs.hubName
+    aiProjectName: ai.outputs.projectName
     keyVaultName: ai.outputs.keyVaultName
+  }
+}
+
+module workspaceConnections 'app/workspace-connections.bicep' = {
+  name: 'workspace-connections'
+  scope: rg
+  params: {
+    aiHubName: ai.outputs.hubName
+    aiResourceGroupName: !empty(aiResourceGroupName) ? aiResourceGroupName : rg.name
+    cosmosAccounntName: cosmos.outputs.accountName
   }
 }
 
 module keyVaultAccess 'core/security/keyvault-access.bicep' = {
   name: 'keyvault-access'
-  scope: rg
+  scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
   params: {
     keyVaultName: ai.outputs.keyVaultName
-    principalId: ai.outputs.aiProjectPrincipalId
+    principalId: ai.outputs.projectPrincipalId
   }
 }
 
@@ -147,7 +164,7 @@ module mlServiceRoleDataScientist 'core/security/role.bicep' = {
   name: 'ml-service-role-data-scientist'
   scope: rg
   params: {
-    principalId: ai.outputs.aiProjectPrincipalId
+    principalId: ai.outputs.projectPrincipalId
     roleDefinitionId: 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
     principalType: 'ServicePrincipal'
   }
@@ -157,7 +174,7 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
   name: 'ml-service-role-secrets-reader'
   scope: rg
   params: {
-    principalId: ai.outputs.aiProjectPrincipalId
+    principalId: ai.outputs.projectPrincipalId
     roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
     principalType: 'ServicePrincipal'
   }
@@ -167,12 +184,12 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
 output AZURE_OPENAI_NAME string = ai.outputs.openAiName
 output AZURE_COSMOS_NAME string = cosmos.outputs.accountName
 output AZURE_SEARCH_NAME string = ai.outputs.searchName
-output AZUREML_HUB_WORKSPACE_NAME string = ai.outputs.aiHubName
-output AZUREML_WORKSPACE_NAME string = ai.outputs.aiProjectName
+output AZUREML_HUB_WORKSPACE_NAME string = ai.outputs.hubName
+output AZUREML_WORKSPACE_NAME string = ai.outputs.projectName
 
 output AZURE_RESOURCE_GROUP string = rg.name
 output AI_SERVICES_ENDPOINT string = ai.outputs.openAiEndpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
 output SEARCH_ENDPOINT string = ai.outputs.searchEndpoint
-output AZURE_CONTAINER_REGISTRY_NAME string = ai.outputs.registryName
+output AZURE_CONTAINER_REGISTRY_NAME string = ai.outputs.containerRegistryName
 output AZURE_KEY_VAULT_NAME string = ai.outputs.keyVaultName

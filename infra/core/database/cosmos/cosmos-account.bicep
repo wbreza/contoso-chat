@@ -1,10 +1,12 @@
+import { resourceReference } from  '../../types.bicep'
+
 metadata description = 'Creates an Azure Cosmos DB account.'
 param name string
 param location string = resourceGroup().location
 param tags object = {}
 
 param connectionStringKey string = 'AZURE-COSMOS-CONNECTION-STRING'
-param keyVaultName string
+param keyVaultReference resourceReference
 
 @allowed([ 'GlobalDocumentDB', 'MongoDB', 'Parse' ])
 param kind string
@@ -31,16 +33,14 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-08-15' = {
   }
 }
 
-resource cosmosConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: connectionStringKey
-  properties: {
+module cosmosConnectionString '../../security/kevault-secret.bicep' = {
+  name: 'cosmosConnectionString'
+  scope: resourceGroup(keyVaultReference.resourceGroup)
+  params: {
+    keyVaultName: keyVaultReference.name
+    name: connectionStringKey
     value: cosmos.listConnectionStrings().connectionStrings[0].connectionString
   }
-}
-
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
-  name: keyVaultName
 }
 
 output connectionStringKey string = connectionStringKey
