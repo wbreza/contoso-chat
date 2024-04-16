@@ -9,20 +9,19 @@ hooks:
     run: ./infra/hooks/postprovision.sh
 services:
   chat:
+    resourceGroup: ${AZUREML_RESOURCE_GROUP}
     host: ml.endpoint
     config:
+      workspace: ${AZUREML_AI_PROJECT_NAME}
       environment:
-        name: wabrez-custom-env
         path: deployment/docker/environment.yml
       flow:
-        name: wb-custom-flow
         path: ./contoso-chat
       model:
-        name: wabrez-custom-model
         path: deployment/chat-model.yaml
         overrides:
           "properties.azureml.promptflow.source_flow_id": ${AZUREML_FLOW_NAME}
       deployment:
         path: deployment/chat-deployment.yaml
         overrides:
-          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_WORKSPACE_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}
+          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_AI_PROJECT_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}

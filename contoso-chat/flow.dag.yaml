@@ -43,7 +43,7 @@ nodes:
     question: ${inputs.question}
     index_name: contoso-products
     embedding: ${question_embedding.output}
-    search: products-search
+    search: search-connection
 - name: customer_lookup
   type: python
   source:

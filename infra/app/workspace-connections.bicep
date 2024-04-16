@@ -6,7 +6,7 @@ module cosmosConnection 'cosmos-connection.bicep' = {
   name: 'products-cosmos'
   scope: resourceGroup(aiResourceGroupName)
   params: {
-    name: 'custom-products-cosmos-connection'
+    name: 'products-cosmos'
     hubName: aiHubName
     endpoint: cosmosAccount.properties.documentEndpoint
     database: 'products'

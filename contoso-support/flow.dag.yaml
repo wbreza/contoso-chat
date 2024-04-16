@@ -55,7 +55,7 @@ nodes:
     type: code
     path: retrieve_support_documentation.py
   inputs:
-    search: products-search
+    search: search-connection
     question: ${inputs.question}
     index_name: contoso-manuals-index
     embedding: ${question_embedding.output}

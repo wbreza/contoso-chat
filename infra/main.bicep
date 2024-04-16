@@ -1,3 +1,5 @@
+import { aiDependentResourceMap } from 'core/host/ai-environment.bicep'
+
 targetScope = 'subscription'
 
 @minLength(1)
@@ -22,6 +24,7 @@ param aiResourceGroupName string = ''
 param aiProjectName string = ''
 param aiHubName string = ''
 param logAnalyticsName string = ''
+param existingResources aiDependentResourceMap = {}
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -69,25 +72,26 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
   }
 }
 
-module ai 'app/ai.bicep' = {
+module ai 'core/host/ai-environment.bicep' = {
   name: 'ai'
   scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
   params: {
-    resourceToken: resourceToken
     location: location
     tags: tags
-    hubName: aiHubName
-    projectName: aiProjectName
-    appInsightsName: appInsightsName
-    containerRegistryName: containerRegistryName
-    keyVaultName: keyVaultName
-    storageAccountName: storageAccountName
-    openAiName: openAiName
-    searchName: searchServiceName
+    hubName: !empty(aiHubName) ? aiHubName : 'ai-hub-${resourceToken}'
+    projectName: !empty(aiProjectName) ? aiProjectName : 'ai-project-${resourceToken}'
+    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    appInsightsName: !empty(appInsightsName) ? appInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    storageAccountName: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
+    openAiName: !empty(openAiName) ? openAiName : 'aoai-${resourceToken}'
+    searchName: !empty(searchServiceName) ? searchServiceName : 'srch-${resourceToken}'
+    existingResources: existingResources
   }
 }
 
-module machineLearningEndpoint './core/host/online-endpoint.bicep' = {
+module machineLearningEndpoint './core/host/ml-online-endpoint.bicep' = {
   name: 'endpoint'
   scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
   params: {
@@ -181,12 +185,14 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
 }
 
 // output the names of the resources
+output AZURE_TENANT_ID string = tenant().tenantId
+output AZUREML_RESOURCE_GROUP string = ai.outputs.resourceGroupName
+output AZUREML_AI_HUB_NAME string = ai.outputs.hubName
+output AZUREML_AI_PROJECT_NAME string = ai.outputs.projectName
+
 output AZURE_OPENAI_NAME string = ai.outputs.openAiName
 output AZURE_COSMOS_NAME string = cosmos.outputs.accountName
 output AZURE_SEARCH_NAME string = ai.outputs.searchName
-output AZUREML_HUB_WORKSPACE_NAME string = ai.outputs.hubName
-output AZUREML_WORKSPACE_NAME string = ai.outputs.projectName
-
 output AZURE_RESOURCE_GROUP string = rg.name
 output AI_SERVICES_ENDPOINT string = ai.outputs.openAiEndpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
