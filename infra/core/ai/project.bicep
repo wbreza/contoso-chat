@@ -1,8 +1,20 @@
+@description('The AI Studio Hub Resource name')
 param name string
+@description('The display name of the AI Studio Hub Resource')
 param displayName string = name
+@description('The name of the AI Studio Hub Resource where this project should be created')
 param hubName string
-param location string = resourceGroup().location
 
+@description('The SKU name to use for the AI Studio Hub Resource')
+param skuName string = 'Basic'
+@description('The SKU tier to use for the AI Studio Hub Resource')
+@allowed(['Basic', 'Free', 'Premium', 'Standard'])
+param skuTier string = 'Basic'
+@description('The public network access setting to use for the AI Studio Hub Resource')
+@allowed(['Enabled','Disabled'])
+param publicNetworkAccess string = 'Enabled'
+
+param location string = resourceGroup().location
 param tags object = {}
 
 resource project 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' = {
@@ -10,8 +22,8 @@ resource project 'Microsoft.MachineLearningServices/workspaces@2024-01-01-previe
   location: location
   tags: tags
   sku: {
-    name: 'Basic'
-    tier: 'Basic'
+    name: skuName
+    tier: skuTier
   }
   kind: 'Project'
   identity: {
@@ -21,7 +33,7 @@ resource project 'Microsoft.MachineLearningServices/workspaces@2024-01-01-previe
     friendlyName: displayName
     hbiWorkspace: false
     v1LegacyMode: false
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: publicNetworkAccess
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
     // most properties are not allowed for a project workspace: "Project workspace shouldn't define ..."
     hubResourceId: hub.id

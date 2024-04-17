@@ -1,12 +1,30 @@
+@description('The AI Studio Hub Resource name')
 param name string
+@description('The display name of the AI Studio Hub Resource')
 param displayName string = name
-param location string = resourceGroup().location
-param storageAccountName string
-param keyVaultName string
+@description('The storage account ID to use for the AI Studio Hub Resource')
+param storageAccountId string
+@description('The key vault ID to use for the AI Studio Hub Resource')
+param keyVaultId string
+@description('The application insights ID to use for the AI Studio Hub Resource')
+param appInsightsId string = ''
+@description('The container registry ID to use for the AI Studio Hub Resource')
+param containerRegistryId string = ''
+@description('The OpenAI Cognitive Services account name to use for the AI Studio Hub Resource')
 param openAiName string
-param appInsightsName string = ''
-param containerRegistryName string = ''
+@description('The Azure Cognitive Search service name to use for the AI Studio Hub Resource')
 param aiSearchName string = ''
+
+@description('The SKU name to use for the AI Studio Hub Resource')
+param skuName string = 'Basic'
+@description('The SKU tier to use for the AI Studio Hub Resource')
+@allowed(['Basic', 'Free', 'Premium', 'Standard'])
+param skuTier string = 'Basic'
+@description('The public network access setting to use for the AI Studio Hub Resource')
+@allowed(['Enabled','Disabled'])
+param publicNetworkAccess string = 'Enabled'
+
+param location string = resourceGroup().location
 param tags object = {}
 
 resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' = {
@@ -14,8 +32,8 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
   location: location
   tags: tags
   sku: {
-    name: 'Basic'
-    tier: 'Basic'
+    name: skuName
+    tier: skuTier
   }
   kind: 'Hub'
   identity: {
@@ -23,16 +41,16 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
   }
   properties: {
     friendlyName: displayName
-    storageAccount: storageAccount.id
-    keyVault: keyVault.id
-    applicationInsights: empty(appInsightsName) ? '' : appInsights.id
-    containerRegistry: empty(containerRegistryName) ? '' : containerRegistry.id
+    storageAccount: storageAccountId
+    keyVault: keyVaultId
+    applicationInsights: !empty(appInsightsId) ? appInsightsId : null
+    containerRegistry: !empty(containerRegistryId) ? containerRegistryId : null
     hbiWorkspace: false
     managedNetwork: {
       isolationMode: 'Disabled'
     }
     v1LegacyMode: false
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: publicNetworkAccess
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
   }
 
@@ -60,7 +78,7 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
       category: 'AzureOpenAI'
       authType: 'ApiKey'
       isSharedToAll: true
-      target: openAi.properties.endpoint
+      target: openAi.properties.endpoints['OpenAI Language Model Instance API']
       metadata: {
         ApiVersion: '2023-07-01-preview'
         ApiType: 'azure'
@@ -81,29 +99,11 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
         isSharedToAll: true
         target: 'https://${search.name}.search.windows.net/'
         credentials: {
-          key: search.listAdminKeys().primaryKey
+          key: !empty(aiSearchName) ? search.listAdminKeys().primaryKey : ''
         }
       }
     }
 }
-
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
-  name: storageAccountName
-}
-
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVaultName
-}
-
-resource appInsights 'Microsoft.Insights/components@2020-02-02' existing =
-  if (!empty(appInsightsName)) {
-    name: appInsightsName
-  }
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' existing =
-  if (!empty(containerRegistryName)) {
-    name: containerRegistryName
-  }
 
 resource openAi 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
   name: openAiName

@@ -9,7 +9,6 @@ hooks:
     run: ./infra/hooks/postprovision.sh
 services:
   chat:
-    resourceGroup: ${AZUREML_RESOURCE_GROUP}
     host: ml.endpoint
     config:
       workspace: ${AZUREML_AI_PROJECT_NAME}

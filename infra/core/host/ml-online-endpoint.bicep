@@ -6,18 +6,20 @@ param tags object = {}
 param aiProjectName string
 param aiHubName string
 param keyVaultName string
+param kind string = 'Managed'
+param authMode string = 'Key'
 
 resource endpoint 'Microsoft.MachineLearningServices/workspaces/onlineEndpoints@2023-10-01' = {
   name: name
   location: location
   parent: workspace
-  kind: 'Managed'
+  kind: kind
   tags: union(tags, { 'azd-service-name': serviceName })
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
-    authMode: 'Key'
+    authMode: authMode
   }
 }
 

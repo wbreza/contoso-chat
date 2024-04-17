@@ -1,5 +1,3 @@
-import { aiDependentResourceMap } from 'core/host/ai-environment.bicep'
-
 targetScope = 'subscription'
 
 @minLength(1)
@@ -24,7 +22,6 @@ param aiResourceGroupName string = ''
 param aiProjectName string = ''
 param aiHubName string = ''
 param logAnalyticsName string = ''
-param existingResources aiDependentResourceMap = {}
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -44,6 +41,9 @@ var actualCosmosAccountName = !empty(cosmosAccountName)
   ? cosmosAccountName
   : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
 
+var openAiConfig = loadYamlContent('./ai.yaml')
+var openAiModelDeployments = array(contains(openAiConfig, 'deployments') ? openAiConfig.deployments : [])
+
 module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
   name: 'cosmos'
   scope: rg
@@ -58,10 +58,7 @@ module cosmos 'core/database/cosmos/sql/cosmos-sql-db.bicep' = {
         'hidden-cosmos-mmspecial': ''
       }
     )
-    keyVaultReference: {
-      name: ai.outputs.keyVaultName
-      resourceGroup: !empty(aiResourceGroupName) ? aiResourceGroupName : rg.name
-    }
+    keyVaultName: ai.outputs.keyVaultName
     containers: [
       {
         name: 'customers'
@@ -80,14 +77,20 @@ module ai 'core/host/ai-environment.bicep' = {
     tags: tags
     hubName: !empty(aiHubName) ? aiHubName : 'ai-hub-${resourceToken}'
     projectName: !empty(aiProjectName) ? aiProjectName : 'ai-project-${resourceToken}'
-    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    logAnalyticsName: !empty(logAnalyticsName)
+      ? logAnalyticsName
+      : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     appInsightsName: !empty(appInsightsName) ? appInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-    containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    containerRegistryName: !empty(containerRegistryName)
+      ? containerRegistryName
+      : '${abbrs.containerRegistryRegistries}${resourceToken}'
     keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
-    storageAccountName: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
+    storageAccountName: !empty(storageAccountName)
+      ? storageAccountName
+      : '${abbrs.storageStorageAccounts}${resourceToken}'
     openAiName: !empty(openAiName) ? openAiName : 'aoai-${resourceToken}'
+    openAiModelDeployments: openAiModelDeployments
     searchName: !empty(searchServiceName) ? searchServiceName : 'srch-${resourceToken}'
-    existingResources: existingResources
   }
 }
 
@@ -186,16 +189,23 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
 
 // output the names of the resources
 output AZURE_TENANT_ID string = tenant().tenantId
-output AZUREML_RESOURCE_GROUP string = ai.outputs.resourceGroupName
+output AZURE_RESOURCE_GROUP string = rg.name
+
 output AZUREML_AI_HUB_NAME string = ai.outputs.hubName
 output AZUREML_AI_PROJECT_NAME string = ai.outputs.projectName
 
 output AZURE_OPENAI_NAME string = ai.outputs.openAiName
+output AZURE_OPENAI_ENDPOINT string = ai.outputs.openAiEndpoint
+
 output AZURE_COSMOS_NAME string = cosmos.outputs.accountName
-output AZURE_SEARCH_NAME string = ai.outputs.searchName
-output AZURE_RESOURCE_GROUP string = rg.name
-output AI_SERVICES_ENDPOINT string = ai.outputs.openAiEndpoint
 output COSMOS_ENDPOINT string = cosmos.outputs.endpoint
-output SEARCH_ENDPOINT string = ai.outputs.searchEndpoint
+
+output AZURE_SEARCH_NAME string = ai.outputs.searchName
+output AZURE_SEARCH_ENDPOINT string = ai.outputs.searchEndpoint
+
 output AZURE_CONTAINER_REGISTRY_NAME string = ai.outputs.containerRegistryName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = ai.outputs.containerRegistryEndpoint
+
 output AZURE_KEY_VAULT_NAME string = ai.outputs.keyVaultName
+output AZURE_KEY_VAULT_ENDPOINT string = ai.outputs.keyVaultEndpoint
+
