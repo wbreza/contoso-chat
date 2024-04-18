@@ -141,6 +141,7 @@ module search '../search/search-services.bicep' =
       location: location
       tags: tags
       name: searchName
+      semanticSearch: 'free'
     }
   }
 
