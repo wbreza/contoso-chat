@@ -18,7 +18,7 @@
 
 # # Execute the command and parse versions directly, storing the highest version number
 # max_version=0
-# for version in $(az ml environment list --name $acrRepository --resource-group $AZURE_RESOURCE_GROUP --workspace-name $AZUREML_PROJECT_NAME | jq -r '.[].version'); do
+# for version in $(az ml environment list --name $acrRepository --resource-group $AZURE_RESOURCE_GROUP --workspace-name $AZUREAI_PROJECT_NAME | jq -r '.[].version'); do
 #     if [ "$version" -gt "$max_version" ]; then
 #         max_version=$version
 #     fi
@@ -33,7 +33,7 @@
 
 
 # az acr login --name $AZURE_CONTAINER_REGISTRY_NAME
-# az ml environment create --file deployment/docker/environment.yml --resource-group $AZURE_RESOURCE_GROUP --workspace-name $AZUREML_PROJECT_NAME --version $new_version
+# az ml environment create --file deployment/docker/environment.yml --resource-group $AZURE_RESOURCE_GROUP --workspace-name $AZUREAI_PROJECT_NAME --version $new_version
 
 # # Pause for 600 seconds to allow the environment to be created
 # echo "Waiting for environment to be created..."
@@ -49,33 +49,33 @@
 
 # # register promptflow as model
 # echo "Registering PromptFlow as a model in Azure ML..."
-# az ml model create --file deployment/chat-model.yaml  -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME
+# az ml model create --file deployment/chat-model.yaml  -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME
 
 # # Deploy prompt flow
 # echo "Deploying PromptFlow to Azure ML..."
-# az ml online-endpoint create --file deployment/chat-endpoint.yaml -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME
+# az ml online-endpoint create --file deployment/chat-endpoint.yaml -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME
 
-# PRT_CONFIG_OVERRIDE=deployment.subscription_id=$AZURE_SUBSCRIPTION_ID,deployment.resource_group=$AZURE_RESOURCE_GROUP,deployment.workspace_name=$AZUREML_PROJECT_NAME,deployment.endpoint_name=$endpointName,deployment.deployment_name=$deploymentName
+# PRT_CONFIG_OVERRIDE=deployment.subscription_id=$AZURE_SUBSCRIPTION_ID,deployment.resource_group=$AZURE_RESOURCE_GROUP,deployment.workspace_name=$AZUREAI_PROJECT_NAME,deployment.endpoint_name=$endpointName,deployment.deployment_name=$deploymentName
 # sed -i "s/PRT_CONFIG_OVERRIDE:.*/PRT_CONFIG_OVERRIDE: $PRT_CONFIG_OVERRIDE/g" deployment/chat-deployment.yaml
 
 # # Setup deployment
 # echo "Setting up deployment..."
-# az ml online-deployment create --file deployment/chat-deployment.yaml --name $deploymentName --endpoint-name $endpointName --all-traffic -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME --set environment.image=$image_name
-# az ml online-endpoint show -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME
-# az ml online-deployment get-logs --name $deploymentName --endpoint-name $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME
+# az ml online-deployment create --file deployment/chat-deployment.yaml --name $deploymentName --endpoint-name $endpointName --all-traffic -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME --set environment.image=$image_name
+# az ml online-endpoint show -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME
+# az ml online-deployment get-logs --name $deploymentName --endpoint-name $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME
 
 # # Read endpoint principal
 
 # echo "Reading endpoint principal..."
-# principal_id=$(az ml online-endpoint show -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREML_PROJECT_NAME --query "identity.principal_id" -o tsv)
+# principal_id=$(az ml online-endpoint show -n $endpointName -g $AZURE_RESOURCE_GROUP -w $AZUREAI_PROJECT_NAME --query "identity.principal_id" -o tsv)
 # echo "Principal is: $principal_id"
  
 # # Assign Permission to Endpoint Principal
 
 # echo "Assigning Data Scientist permissions to Principal..."
-# az role assignment create --assignee $principal_id --role "AzureML Data Scientist" --scope "subscriptions/$AZURE_SUBSCRIPTION_ID/resourcegroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.MachineLearningServices/workspaces/$AZUREML_PROJECT_NAME"
+# az role assignment create --assignee $principal_id --role "AzureML Data Scientist" --scope "subscriptions/$AZURE_SUBSCRIPTION_ID/resourcegroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.MachineLearningServices/workspaces/$AZUREAI_PROJECT_NAME"
 # echo "Assigning permissions to Principal to Endpoint..."
-# az role assignment create --assignee $principal_id --role "Azure Machine Learning Workspace Connection Secrets Reader" --scope "subscriptions/$AZURE_SUBSCRIPTION_ID/resourcegroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.MachineLearningServices/workspaces/$AZUREML_PROJECT_NAME/onlineEndpoints/$endpointName"
+# az role assignment create --assignee $principal_id --role "Azure Machine Learning Workspace Connection Secrets Reader" --scope "subscriptions/$AZURE_SUBSCRIPTION_ID/resourcegroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.MachineLearningServices/workspaces/$AZUREAI_PROJECT_NAME/onlineEndpoints/$endpointName"
  
 # # Get Key Vault name
 

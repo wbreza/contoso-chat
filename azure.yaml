@@ -11,7 +11,7 @@ services:
   chat:
     host: ml.endpoint
     config:
-      workspace: ${AZUREML_AI_PROJECT_NAME}
+      workspace: ${AZUREAI_PROJECT_NAME}
       environment:
         path: deployment/docker/environment.yml
       flow:
@@ -19,8 +19,8 @@ services:
       model:
         path: deployment/chat-model.yaml
         overrides:
-          "properties.azureml.promptflow.source_flow_id": ${AZUREML_FLOW_NAME}
+          "properties.azureml.promptflow.source_flow_id": ${AZUREAI_FLOW_NAME}
       deployment:
         path: deployment/chat-deployment.yaml
         overrides:
-          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREML_AI_PROJECT_NAME},deployment.endpoint_name=${AZUREML_ENDPOINT_NAME},deployment.deployment_name=${AZUREML_DEPLOYMENT_NAME}
+          environment_variables.PRT_CONFIG_OVERRIDE: deployment.subscription_id=${AZURE_SUBSCRIPTION_ID},deployment.resource_group=${AZURE_RESOURCE_GROUP},deployment.workspace_name=${AZUREAI_PROJECT_NAME},deployment.endpoint_name=${AZUREAI_ENDPOINT_NAME},deployment.deployment_name=${AZUREAI_DEPLOYMENT_NAME}

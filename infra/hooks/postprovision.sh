@@ -47,12 +47,12 @@ searchService=$AZURE_SEARCH_NAME
 openAiService=$AZURE_OPENAI_NAME
 cosmosService=$AZURE_COSMOS_NAME
 subscriptionId=$AZURE_SUBSCRIPTION_ID
-mlProjectName=$AZUREML_AI_PROJECT_NAME
+mlProjectName=$AZUREAI_PROJECT_NAME
 
 # Ensure all required environment variables are set
 if [ -z "$resourceGroupName" ] || [ -z "$searchService" ] || [ -z "$openAiService" ] || [ -z "$cosmosService" ] || [ -z "$subscriptionId" ] || [ -z "$mlProjectName" ]; then
     echo "One or more required environment variables are not set."
-    echo "Ensure that AZURE_RESOURCE_GROUP, AZURE_SEARCH_NAME, AZURE_OPENAI_NAME, AZURE_COSMOS_NAME, AZURE_SUBSCRIPTION_ID, and AZUREML_PROJECT_NAME are set."
+    echo "Ensure that AZURE_RESOURCE_GROUP, AZURE_SEARCH_NAME, AZURE_OPENAI_NAME, AZURE_COSMOS_NAME, AZURE_SUBSCRIPTION_ID, and AZUREAI_PROJECT_NAME are set."
     exit 1
 fi
 

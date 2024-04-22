@@ -191,8 +191,8 @@ module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_RESOURCE_GROUP string = rg.name
 
-output AZUREML_AI_HUB_NAME string = ai.outputs.hubName
-output AZUREML_AI_PROJECT_NAME string = ai.outputs.projectName
+output AZUREAI_HUB_NAME string = ai.outputs.hubName
+output AZUREAI_PROJECT_NAME string = ai.outputs.projectName
 
 output AZURE_OPENAI_NAME string = ai.outputs.openAiName
 output AZURE_OPENAI_ENDPOINT string = ai.outputs.openAiEndpoint
