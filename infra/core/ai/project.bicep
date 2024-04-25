@@ -4,6 +4,8 @@ param name string
 param displayName string = name
 @description('The name of the AI Studio Hub Resource where this project should be created')
 param hubName string
+@description('The name of the key vault resource to grant access to the project')
+param keyVaultName string
 
 @description('The SKU name to use for the AI Studio Hub Resource')
 param skuName string = 'Basic'
@@ -37,6 +39,32 @@ resource project 'Microsoft.MachineLearningServices/workspaces@2024-01-01-previe
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
     // most properties are not allowed for a project workspace: "Project workspace shouldn't define ..."
     hubResourceId: hub.id
+  }
+}
+
+module keyVaultAccess '../security/keyvault-access.bicep' = {
+  name: 'keyvault-access'
+  params: {
+    keyVaultName: keyVaultName
+    principalId: project.identity.principalId
+  }
+}
+
+module mlServiceRoleDataScientist '../security/role.bicep' = {
+  name: 'ml-service-role-data-scientist'
+  params: {
+    principalId: project.identity.principalId
+    roleDefinitionId: 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module mlServiceRoleSecretsReader '../security/role.bicep' = {
+  name: 'ml-service-role-secrets-reader'
+  params: {
+    principalId: project.identity.principalId
+    roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
+    principalType: 'ServicePrincipal'
   }
 }
 

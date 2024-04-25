@@ -64,6 +64,7 @@ module project '../ai/project.bicep' = {
     name: projectName
     displayName: projectName
     hubName: hub.outputs.name
+    keyVaultName: hubDependencies.outputs.keyVaultName
   }
 }
 

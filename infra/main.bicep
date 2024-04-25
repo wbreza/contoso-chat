@@ -118,15 +118,6 @@ module workspaceConnections 'app/workspace-connections.bicep' = {
   }
 }
 
-module keyVaultAccess 'core/security/keyvault-access.bicep' = {
-  name: 'keyvault-access'
-  scope: resourceGroup(!empty(aiResourceGroupName) ? aiResourceGroupName : rg.name)
-  params: {
-    keyVaultName: ai.outputs.keyVaultName
-    principalId: ai.outputs.projectPrincipalId
-  }
-}
-
 module userAcrRolePush 'core/security/role.bicep' = {
   name: 'user-acr-role-push'
   scope: rg
@@ -164,26 +155,6 @@ module userRoleSecretsReader 'core/security/role.bicep' = {
     principalId: principalId
     roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
     principalType: 'User'
-  }
-}
-
-module mlServiceRoleDataScientist 'core/security/role.bicep' = {
-  name: 'ml-service-role-data-scientist'
-  scope: rg
-  params: {
-    principalId: ai.outputs.projectPrincipalId
-    roleDefinitionId: 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
-    principalType: 'ServicePrincipal'
-  }
-}
-
-module mlServiceRoleSecretsReader 'core/security/role.bicep' = {
-  name: 'ml-service-role-secrets-reader'
-  scope: rg
-  params: {
-    principalId: ai.outputs.projectPrincipalId
-    roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
-    principalType: 'ServicePrincipal'
   }
 }
 
