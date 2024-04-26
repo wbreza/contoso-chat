@@ -94,7 +94,7 @@
                             "springapp",
                             "staticwebapp",
                             "aks",
-                            "ml.endpoint"
+                            "ai.endpoint"
                         ]
                     },
                     "language": {
@@ -230,7 +230,7 @@
                                         "enum": [
                                             "containerapp",
                                             "aks",
-                                            "ml.endpoint"
+                                            "ai.endpoint"
                                         ]
                                     }
                                 }
@@ -250,7 +250,7 @@
                         "if": {
                             "properties": {
                                 "host": {
-                                    "const": "ml.endpoint"
+                                    "const": "ai.endpoint"
                                 }
                             }
                         },

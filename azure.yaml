@@ -9,7 +9,7 @@ hooks:
     run: ./infra/hooks/postprovision.sh
 services:
   chat:
-    host: ml.endpoint
+    host: ai.endpoint
     config:
       workspace: ${AZUREAI_PROJECT_NAME}
       environment:
